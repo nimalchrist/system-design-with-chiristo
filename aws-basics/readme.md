@@ -113,7 +113,7 @@
 
 ---
 
-## EC2
+## EC2 (Elastic Compute Cloud)
 
 ### EC2 Basics
 - EC2 (Elastic Compute Cloud) provides resizable virtual servers in the cloud.
@@ -210,7 +210,141 @@
 7. **25** – SMTP  
    - Email traffic
 
----
+
+### Amazon EC2 Purchasing Options
+
+#### 1. **On-Demand Instances** (Pay as you go)
+
+* Pay only for what you use
+  * **Per second**: Linux, Windows
+  * **Per hour**: macOS (minimum 24-hour allocation)
+* No long-term commitment
+* No upfront payment
+* Most expensive option per unit time
+* Ideal for:
+  * Unpredictable workloads
+  * Short-term or spike workloads
+  * Testing and development
+
+#### 2. **Reserved Instances (RIs)** (Commit for 1 or 3 years)
+
+* Commit to:
+  * Instance type
+  * Region (Regional or Zonal)
+  * OS
+  * Tenancy
+* **Zonal RIs** provide capacity reservation in a specific AZ
+* **Regional RIs** provide billing discount only (no capacity guarantee)
+* 1-year or 3-year commitment
+* Significant discounts (up to ~75%)
+* Best for steady, predictable workloads
+*  **Types**
+   * **Standard Reserved Instances**
+   * Highest discount
+   * Can be **bought and sold** on the AWS Marketplace
+   * Cannot change instance attributes
+   * **Convertible Reserved Instances**
+   * Slightly lower discount
+   * Can be **exchanged** for different instance families, OS, tenancy, or scope
+   * **Cannot be sold** on the AWS Marketplace
+
+##### 3. **Spot Instances** (Use spare AWS capacity)
+
+* Use unused EC2 capacity at very low prices
+* Up to **90% discount**
+* AWS can reclaim instances with short notice
+* Not reliable for critical workloads
+* Ideal for **fault-tolerant and stateless workloads**, such as:
+  * Batch processing
+  * Data analysis
+  * Image and video processing
+  * Distributed workloads
+  * Workloads with flexible start and stop times
+
+#### 4. **Savings Plans**
+
+* Commit to a consistent amount of usage (for example, `$10/hour`)
+* 1-year or 3-year commitment
+* Usage beyond commitment is charged at On-Demand rates
+* Discounts similar to Reserved Instances
+* **Types**
+   * **Compute Savings Plans**
+   * Most flexible
+   * Works across:
+      * Instance families
+      * Instance sizes
+      * Regions
+      * OS
+      * Tenancy
+   * **EC2 Instance Savings Plans**
+   * Locked to:
+      * Instance family
+      * Region
+      * OS
+      * Tenancy
+   * Flexible across instance sizes within the same family
+* Ideal for predictable workloads without wanting to manage RIs
+
+#### 5. **Dedicated Hosts**
+
+* Entire **physical server** dedicated to your use
+* Full control over host-level configuration
+* Required for certain:
+  * Compliance requirements
+  * Licensing models (BYOL)
+* Available as On-Demand or Reserved
+* Most expensive EC2 option
+* Recommended when host-level visibility or control is mandatory
+
+#### 6. **Dedicated Instances**
+
+* Instances run on hardware dedicated to a single customer
+* No control at the host level
+* AWS can move instances to different physical hosts after stop/start
+* Cheaper than Dedicated Hosts
+* Available as On-Demand or Reserved
+* Used for compliance scenarios where host control is not required
+
+#### 7. **Capacity Reservations**
+
+* Reserve EC2 capacity in a **specific Availability Zone**
+* No long-term commitment
+* No billing discounts
+* Charged at **On-Demand rates**, even if unused
+* Guarantees capacity availability
+* Useful for:
+  * Short-term, uninterrupted workloads
+  * AZ-specific deployments
+  * Events or planned spikes
+
+
+#### EC2 Purchasing Options - Resort Analogy
+
+1. **On-Demand**
+   * Walk in and stay whenever you like
+   * Pay full price for every day you stay
+
+2. **Reserved Instances**
+   * Book a room for 1 or 3 years
+   * Cheaper per day
+   * You pay even if you don’t stay
+
+3. **Spot Instances**
+   * Bid for a discounted room
+   * Cheap, but you can be kicked out anytime
+
+4. **Savings Plans**
+   * Prepay for a certain amount of stay per day
+   * You can switch room types later
+
+5. **Dedicated Hosts**
+   * Rent the entire building
+   * Expensive, but fully yours
+
+6. **Capacity Reservations**
+   * Book a room at full price
+   * Pay even if you never show up
+
 
 ## S3
 
