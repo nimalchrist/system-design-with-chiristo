@@ -346,6 +346,48 @@
    * Pay even if you never show up
 
 
+### EC2 Placment Groups
+
+- Some times we need to deploy multiple instances in a place where we need to chooose. For that placement groups are used.
+- Types: 
+  - **Cluster** - Clusters the intstances in a single AZ
+    - Pros: Low latency, high bandwidth between the instances
+    - Cons: Single point of failure
+    - BestUsecase: High performance computing (HPC), Big data analytics
+  - **Spread** - Spreads the instances across multiple AZs and each instance is on a different hardware
+    - Pros: High availability and reduced risk of simultaneous failures
+    - Cons: High latency, low bandwidth and 7 instances per AZ per placement group
+    - BestUsecase: Critical workloads that require high availability
+  - **Partition** - Partitions the racks across multiple AZs and each partition is on a different hardware
+    - Each partition can have 100s of instances and each partition is isolated from other partitions
+    - 7 partitions per AZ per placement group
+    - Pros: High availability and reduced risk of simultaneous failures
+    - Cons: High latency, low bandwidth
+    - BestUsecase: Critical workloads that require high availability
+
+
+### ENI (Elastic Network Interfaces)
+- ENI is a virtual network interface that can be attached to an EC2 instance.
+- It has a private IP address, public IP address, and security groups.
+- It has the following attributes:
+   - Primary private IPv4 and one or more secondary private IPv4 addresses
+   - One elastic IP address (IPv4)
+   - One public IPv4
+   - One or more security groups
+   - A Mac address
+- It can be moved from one EC2 instance to another EC2 instance.
+- It can be attached to multiple EC2 instances at a time.   
+- Bound to specific AZ
+
+### EC2 Hibernation
+- Hibernation is a feature that allows you to save the state of an EC2 instance to disk and then stop the instance.
+- When the instance is started again, it will resume from where it left off.
+- It is only available for EBS-backed encrypted storage instances.
+- It is not available for Spot Instances.
+- It is not available for instances with more than 150 GB of RAM.
+
+--- 
+
 ## S3
 
 ---
