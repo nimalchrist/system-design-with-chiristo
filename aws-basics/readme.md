@@ -386,6 +386,60 @@
 - It is not available for Spot Instances.
 - It is not available for instances with more than 150 GB of RAM.
 
+### EC2 Instance Storage
+
+1. **EBS (Elastic Block Store)**
+  - EBS is a network-attached storage that is attached to an EC2 instance.
+  - It allows to persist data even after the instance is stopped.
+  - They are bound to specific AZ
+  - Analogy: Think of it like a network USB stick
+  - It is a network drive not physical drive. So latency will be high
+  - Have a provisioned capacity (IOPS, GBs)
+  - **EBS Snapshots**
+    - EBS snapshots are incremental
+    - First snapshot captures the full volume data, subsequent snapshots only store the changes
+    - Subsequent snapshots only store the changes
+  - **EBS Snapshot Features**
+    - EBS Snapshot Archive - Moving the snapshot to an archive tier that is 75% cheaper and takes 24 to 72hrs for restoring the archive
+    - EBS Recycle Bin - Protect from accidental deletion
+    - Fast Snapshot Restore - Restoring the snapshot to a new volume in minutes (expensive)
+
+  - **EBS Volume Types**
+    - General Purpose (gp2, gp3) - balanced performance and cost
+    - IO Optimized (io1, io2) - high performance ssd
+    - Throughput Optimized (st1) - low cost hdd
+    - Cold HDD (sc1) - lowest cost hdd
+    - Characterized by Size, IOPS, Throughput
+    - Only gpX, ioX supports booting
+
+  - **EBS Volume Types Usecases**
+    - General Purpose (gp2, gp3) - Boot volumes, Dev/Test environments, Small to medium databases
+      - gp3 (baseline 3000 IOPS and 125 MB/s throughput, scalable upto 16,000 IOPS and 1,000 MB/s throughput)
+      - gp2 (baseline 3 IOPS/GB, burstable upto 3,000 IOPS, max 16,000 IOPS and 250 MB/s throughput)
+    - IO Optimized (io1, io2) - Large databases, Mission-critical applications, High-performance computing
+      - io2 Block Express (upto 256,000 IOPS and 4,000 MB/s throughput, provisioned and paid)
+      - io1 (upto 64,000 IOPS and 1,000 MB/s throughput, provisioned and paid)
+    - Throughput Optimized (st1) - Big data analytics, Data warehousing, Large sequential workloads
+      - st1 (max burst throughput upto 500 MB/s)
+    - Cold HDD (sc1) - Infrequently accessed data, Backup and restore, Disaster recovery
+      - sc1 (max burst throughput upto 250 MB/s)
+
+2. **AMI (Amazon Machine Image)**
+  - AMI is a template that contains the operating system, application server, and applications required to launch an instance.
+  - **AMI Process**
+    - Start the instance and customize it
+    - Stop the instance (data integrity)
+    - Create an AMI (also creates EBS snapshot)
+    - Launch new instances from the AMI
+
+3. **Instance Store**
+  - Instance store is a temporary storage that is attached to an EC2 instance.
+  - It is not persistent and is lost when the instance is stopped, terminated, or if the underlying hardware fails
+  - It is bound to the specific physical host, not just an AZ
+  - Analogy: Think of it like a physical USB stick
+  - It is a physical drive not network drive. So latency will be low
+  - Have a provisioned capacity (IOPS, GBs)
+
 --- 
 
 ## S3
