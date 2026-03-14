@@ -423,6 +423,13 @@
       - st1 (max burst throughput upto 500 MB/s)
     - Cold HDD (sc1) - Infrequently accessed data, Backup and restore, Disaster recovery
       - sc1 (max burst throughput upto 250 MB/s)
+  
+  - **EBS Multi Attach**
+    - Attach a single EBS volume to multiple EC2 instances in the same AZ
+    - Only supported for io1, io2, io2 Block Express volumes
+    - Upto 16 EC2 instances can be attached to a single EBS volume
+    - Gives high availability and fault tolerance
+    - Applications must manage concurrent writes
 
 2. **AMI (Amazon Machine Image)**
   - AMI is a template that contains the operating system, application server, and applications required to launch an instance.
