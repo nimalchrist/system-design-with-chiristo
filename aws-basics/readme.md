@@ -447,6 +447,71 @@
   - It is a physical drive not network drive. So latency will be low
   - Have a provisioned capacity (IOPS, GBs)
 
+4. **EFS (Elastic File System)**
+  - EFS is a managed file system that can be attached to multiple EC2 instances in the many AZs
+  - It is a managed network file system
+  - Highly available and scalable
+  - Expensive and pay as you go
+  - Use case: 
+    - Content management systems
+    - Web serving
+    - Data sharing and wordpress
+  - Uses NFSv4.1 protocol
+  - Uses SG to control the access to EFS
+  - File system scales automatically
+
+  - **EFS Storage Tiers**
+    - EFS Standard - For frequently accessed files, stored across multiple AZs
+    - EFS One Zone - For frequently accessed files, stored in a single AZ (cheaper, but less resilient)
+    - EFS Standard IA - Infrequently accessed, stored across multiple AZs, up to 92% cheaper than EFS Standard
+    - EFS One Zone IA - Infrequently accessed, stored in a single AZ
+    - EFS Archive - For rarely accessed data (few times a year), up to 50% cheaper than EFS IA
+
+  - **EFS Lifecycle Management**
+    - Lifecycle policies
+      - Transition into IA - Files not accessed for 7, 14, 30, 60, or 90 days (default: 30 days)
+      - Transition into Archive - Files not accessed for 90 days (default)
+      - Transition into Standard - Files moved back to Standard on first access (EFS Intelligent-Tiering)
+
+  - **EFS Access Points**
+    - Application-specific entry points into an EFS file system
+    - Enforce a POSIX user and group identity for all file system requests made through the access point
+    - Restrict access to a specific root directory within the file system (clients can only see that directory and its subdirectories)
+    - Automatically creates the root directory if it does not exist
+    - Can be combined with IAM policies for fine-grained access control per application
+    - Use cases:
+      - Container-based environments (ECS, EKS) where each app needs isolated access
+      - Sharing specific directories across AWS accounts
+      - Multi-tenant applications where different users/apps need separate isolated paths
+    - A file system can have upto 10,000 access points
+
+5. **EBS vs EFS**
+
+  | Feature | EBS | EFS |
+  |---|---|---|
+  | Storage Type | Block storage | Network file system (NFS) |
+  | Attachment | Single EC2 instance (io1/io2 supports Multi-Attach upto 16 instances) | Multiple EC2 instances across multiple AZs |
+  | Availability | Locked to a specific AZ | Multi-AZ by default (One Zone tier available) |
+  | Scaling | Manually provisioned (size, IOPS) | Automatically scales up and down |
+  | OS Support | Linux and Windows | Linux only |
+  | Protocol | N/A (block level) | NFSv4.1 |
+  | Persistence | Persists after instance stop | Persists independently of any instance |
+  | Performance | Higher (lower latency, provisioned IOPS) | Slightly higher latency (network file system) |
+  | Cost | Cheaper, pay for provisioned capacity | More expensive, pay per GB used |
+  | Use Cases | Databases, boot volumes, single-instance workloads | Shared storage, CMS, web serving, containers |
+
+6. **EC2 Instance Storage - Simple Analogy**
+
+  - Think of it like storage options for a **developer's workstation setup**:
+
+  - **EBS** - Your personal external SSD. It is attached to your machine (EC2 instance), stays in your building (AZ), and keeps your data even when you shut down for the day. Fast, reliable, but yours alone (mostly).
+
+  - **AMI** - A disk image/snapshot of your entire workstation setup. You can clone it and spin up an identical machine anywhere in the office (region). The snapshot lives on a shared drive (S3), so it is not tied to any desk (AZ).
+
+  - **Instance Store** - A RAM drive built into your physical machine. Blazing fast because it is local hardware, but the moment the machine powers off or dies, everything is gone. No backup, no recovery.
+
+  - **EFS** - A shared NAS drive mounted on the office network. Every developer's machine (EC2 across AZs) can read and write to it at the same time. It grows automatically as the team adds more files. Slower than your personal SSD, but perfect for shared codebases, config files, or assets.
+
 --- 
 
 ## S3
