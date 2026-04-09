@@ -512,6 +512,65 @@
 
   - **EFS** - A shared NAS drive mounted on the office network. Every developer's machine (EC2 across AZs) can read and write to it at the same time. It grows automatically as the team adds more files. Slower than your personal SSD, but perfect for shared codebases, config files, or assets.
 
+### Elastic Load Balancing
+
+1. **What is Load Balancer?**
+  - **Elastic Load Balancer (ELB)** - Automatically distributes incoming application traffic across multiple targets (like EC2 instances, containers, IPs) across one or more Availability Zones.
+  - It is a fully managed service by AWS, so you don’t manage infrastructure
+  - It is highly available and fault tolerant by default
+  - It is a regional service and can span across multiple AZs
+  - Performs health checks and routes traffic only to healthy targets
+  - Can handle SSL/TLS termination (offloading encryption work from instances)
+    
+2. **Types of Load Balancers**
+  - **Classic Load Balancer (CLB)** - Legacy load balancer, not recommended for new applications
+    - Operates at both Layer 4 (TCP) and Layer 7 (HTTP/HTTPS) but in a limited way
+    - Supports HTTP, HTTPS, TCP, SSL
+    - Supports health checks and sticky sessions
+    - No advanced routing features (no host/path-based routing)
+    - Mostly replaced by ALB and NLB
+  - **Application Load Balancer (ALB)** - Layer 7 load balancer, operates at the application layer
+    - Operates at Layer 7 (HTTP/HTTPS)
+    - Supports HTTP, HTTPS, WebSocket, HTTP/2
+    - Advanced routing:
+      - Path-based routing (/api, /admin)
+      - Host-based routing (api.example.com)
+      - Query string, headers, source IP
+    - Supports target groups
+    - Target groups:
+      - EC2 instances
+      - IP addresses (private IPs)
+      - Lambda functions
+    - Supports authentication (OIDC, Cognito)
+    - Supports redirects and fixed responses
+    - Ideal for microservices and web apps
+  - **Network Load Balancer (NLB)** - Layer 4 load balancer, operates at the transport layer
+    - Operates at Layer 4 (TCP/UDP/TLS)
+    - Supports TCP, UDP, TLS
+    - Ultra high performance, can handle millions of requests per second
+    - Very low latency
+    - Preserves source IP address (important difference from ALB)
+    - Used for extreme performance / real-time systems
+    - Target groups:
+      - EC2 instances
+      - IP addresses (private IPs)
+      - ALB (used for chaining L4 -> L7)
+    - Supports static IP (Elastic IP) unlike ALB
+  - **Gateway Load Balancer (GLB)** - Layer 3 load balancer, operates at the network layer
+    - Operates at Layer 3 (IP level)
+    - Works with IP packets using GENEVE protocol (port 6081) → important exam point
+    - Used to deploy and scale third-party virtual appliances
+      - Firewalls
+      - Intrusion Detection Systems (IDS)
+      - Deep packet inspection systems
+    - It achieves the following functions:
+      - Acts as a single entry/exit point (gateway) for traffic
+      - Distributes traffic across appliance fleet
+      - Enables transparent network traffic inspection
+    - Target groups:  
+      - EC2 instances (virtual appliances)
+      - IP addresses (private IPs)
+
 --- 
 
 ## S3
