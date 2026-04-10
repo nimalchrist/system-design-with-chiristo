@@ -571,6 +571,26 @@
       - EC2 instances (virtual appliances)
       - IP addresses (private IPs)
 
+3. **Sticky Sessions**
+  - Sticky sessions (also called session affinity) ensure that all requests from a specific client are consistently routed to the same target instance.
+  - This is useful for applications that maintain session state on the server side (e.g., shopping carts, user sessions).
+  - **How it works:**
+    - When a client makes a request, the load balancer sends it to a target based on its routing algorithm.
+    - If sticky sessions are enabled, the load balancer sets a cookie in the client's browser.
+    - On subsequent requests, the load balancer reads the cookie and routes the client to the same target that served the initial request.
+  - **Types of sticky sessions:**
+    - **Duration-based stickiness:** The load balancer maintains stickiness for a specified duration (e.g., 1 hour).
+    - **Application-controlled stickiness:** The application sets a cookie to control stickiness.
+  - **Use cases:**
+    - Applications that maintain session state on the server side
+    - Shopping carts
+    - User sessions
+    - Applications that require session affinity
+  - **Important notes:**
+    - Sticky sessions can reduce load balancing efficiency because they can lead to uneven distribution of traffic.
+    - Sticky sessions should be used only when necessary and for limited durations.
+    - Sticky sessions are not supported for Network Load Balancer.
+
 --- 
 
 ## S3
