@@ -589,7 +589,148 @@
   - **Important notes:**
     - Sticky sessions can reduce load balancing efficiency because they can lead to uneven distribution of traffic.
     - Sticky sessions should be used only when necessary and for limited durations.
-    - Sticky sessions are not supported for Network Load Balancer.
+    - Sticky sessions are not supported for Network Load Balancer. 
+
+### Auto Scaling Groups
+
+1. **What is an Auto Scaling Group?**
+   - **Auto Scaling Group (ASG)** - Automatically adjusts the number of EC2
+     instances based on demand, health checks, or a defined schedule.
+   - It is a free, fully managed service by AWS - you only pay for the
+     underlying EC2 instances and CloudWatch monitoring fees.
+   - It is highly available and fault tolerant by design.
+   - It is a **regional service** and can span multiple AZs within a region,
+     but cannot span multiple regions.
+   - ASG automatically balances instances across AZs when multiple AZs are
+     configured.
+   - When integrated with a Load Balancer, traffic is distributed across
+     healthy instances automatically. Without a Load Balancer, ASG only
+     manages instance count - it does not handle traffic distribution on
+     its own.
+   - Performs health checks and replaces unhealthy instances automatically.
+   - **Three core parameters** that define an ASG's capacity:
+     - **Minimum capacity** - Minimum number of instances always running
+     - **Desired capacity** - Target number of instances ASG tries to maintain
+     - **Maximum capacity** - Upper limit on how many instances can run
+
+2. **ASG Launch Template**
+   - **Launch Template** - A reusable configuration blueprint that ASG uses to
+     launch new EC2 instances. It is preferred over the older Launch
+     Configuration (which is now legacy and does not support all features).
+   - A Launch Template specifies:
+     - AMI + Instance Type
+     - EC2 User Data (bootstrap script)
+     - EBS Volumes
+     - Security Groups
+     - SSH Key Pair
+     - IAM Roles
+     - Network + Subnets
+   - Note: The Load Balancer is configured at the **ASG level**, not inside
+     the Launch Template.
+   - Launch Templates support versioning, allowing you to update configs
+     without replacing the template entirely.
+
+3. **ASG Scaling Policies**
+   - Scaling policies define **when and how** the ASG adjusts its capacity.
+   - There are 5 types:
+
+   - **Manual Scaling**
+     - You manually set the desired capacity.
+     - No automation - useful for one-time adjustments or testing.
+
+   - **Scheduled Scaling**
+     - Scale based on a **predictable, fixed schedule**.
+     - Example: Increase min capacity to 10 every Monday at 8 AM, reduce
+       back at 6 PM.
+     - Use case: Known traffic patterns (business hours, weekly reports).
+
+   - **Simple Scaling**
+     - Responds to a **single CloudWatch alarm** by adding or removing a
+       fixed number of instances.
+     - After a scaling action, it must wait for the **cooldown period**
+       (default: 300 seconds) to expire before responding to another alarm.
+     - Least preferred today - Step Scaling is generally preferred over this.
+
+   - **Step Scaling**
+     - Like Simple Scaling, but with **multiple thresholds (steps)** that
+       trigger different scaling amounts.
+     - Example: CPU > 50% → add 1 instance, CPU > 80% → add 3 instances.
+     - Does **not** wait for cooldown - continuously evaluates alarms even
+       during an ongoing scaling activity.
+     - More fine-grained control than Simple Scaling.
+
+   - **Target Tracking Scaling** *(most recommended)*
+     - You define a **target value for a CloudWatch metric** and ASG
+       automatically scales to maintain it.
+     - Example: Keep average CPU utilization at 50%.
+     - AWS manages the scale-out and scale-in logic for you.
+     - Predefined metrics available:
+       - `ASGAverageCPUUtilization`
+       - `ASGAverageNetworkIn` / `ASGAverageNetworkOut`
+       - `ALBRequestCountPerTarget` (requires ALB integration)
+     - Custom CloudWatch metrics are also supported.
+     - This is the **default and most intelligent** policy type.
+
+   - **Predictive Scaling**
+     - Uses **machine learning** to analyze historical traffic patterns and
+       proactively schedule scaling in advance.
+     - Detects daily and weekly patterns automatically.
+     - Capacity is ready **before** the traffic hits, unlike reactive policies.
+     - Best combined with Target Tracking for both proactive and reactive
+       coverage.
+
+4. **ASG Cooldown Period**
+   - After a scaling activity completes, the ASG waits for the cooldown
+     period before initiating another scaling action.
+   - Default cooldown: **300 seconds**.
+   - Purpose: Allows newly launched instances time to boot and start handling
+     traffic before ASG decides if more scaling is needed.
+   - Applies to **Simple Scaling** policies. Step and Target Tracking policies
+     use a separate **instance warmup** setting instead.
+   - Reducing the cooldown period speeds up scale-in (faster cost savings
+     when demand drops).
+
+5. **ASG Health Checks**
+   - **EC2 Health Check (default)** - Checks if the instance is in a running
+     state. Replaces instances if the underlying hardware fails. Does NOT
+     detect application-level failures.
+   - **ELB Health Check** - If enabled, the ASG uses the Load Balancer's
+     health check results. If the ELB marks an instance as `OutOfService`
+     (e.g., returning HTTP 500 errors), ASG terminates and replaces it.
+     Strongly recommended for web applications.
+   - **Custom Health Check** - You can send a custom health signal to the ASG
+     using the AWS CLI or SDK.
+   - Health check grace period: A configurable delay (default 300s) before
+     ASG starts performing health checks on a newly launched instance,
+     giving it time to initialize.
+
+6. **ASG Lifecycle Hooks**
+   - Allow you to **pause an instance** at a transition point to perform
+     custom actions before it enters service or before it is terminated.
+   - **Launch hook** - Pause an instance before it goes InService. Use this
+     to install software, run configuration scripts, or warm up caches.
+   - **Termination hook** - Pause an instance before it is terminated. Use
+     this to drain connections, copy logs to S3, or deregister from services.
+   - After the custom action completes, you signal the ASG with
+     `CONTINUE` (proceed) or `ABANDON` (terminate the instance).
+
+7. **ASG Integration with Load Balancer**
+   - ASG integrates with **ALB, NLB, or Classic ELB**.
+   - When integrated:
+     - New instances launched by ASG are automatically registered with the
+       Load Balancer's Target Group.
+     - Terminated instances are automatically deregistered.
+   - The Load Balancer and ASG must be in the **same region**.
+   - ELB Health Checks should be enabled on the ASG when using a Load
+     Balancer, to ensure unhealthy instances are replaced properly.
+
+8. **ASG Instance Mix (Spot + On-Demand)**
+   - ASG supports running a **mix of On-Demand and Spot Instances** to
+     balance cost and availability.
+   - Common pattern: 20% On-Demand (stable baseline) + 80% Spot (cost
+     savings of up to 90%).
+   - AWS recommends diversifying across multiple instance types and AZs when
+     using Spot to reduce interruption risk. 
 
 --- 
 
