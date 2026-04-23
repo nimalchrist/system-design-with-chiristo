@@ -734,6 +734,125 @@
 
 --- 
 
+## RDS (Relational Database Service)
+
+### RDS Basics
+- RDS is a managed database service that makes it easier to set up, operate, and scale a relational database in the cloud.
+- RDS supports the following database engines:
+    - PostgreSQL
+    - MySQL
+    - MariaDB
+    - Oracle
+    - Microsoft SQL Server
+    - Amazon Aurora
+- RDS is a managed service, which means that AWS takes care of the underlying infrastructure, including:
+    - Patching
+    - Backups
+    - Monitoring
+    - Scaling
+    - Security
+    - High Availability
+    - Disaster Recovery
+- You can focus on using your database instead of managing it.
+- Even though RDS uses EC2 instances in the backend, you cannot SSH into or directly access those underlying EC2 instances.
+
+### RDS Scaling
+- RDS supports the following scaling options:
+    - Vertical Scaling (scaling up/down the instance class)
+    - Horizontal Scaling (Read Replicas for read-heavy workloads)
+
+
+### RDS Read Replicas vs Multi AZ
+
+#### RDS Read Replicas
+- When there is an increase in read traffic on a specific DB instance, Read Replicas can be used to scale out read operations.
+- Read Replicas are read-only copies of the primary database - they serve only read operations, not write operations.
+- Replication is **asynchronous**, meaning there can be a small lag between the primary database and the read replicas (eventual consistency).
+- The application must manage which connection string points to the primary (for writes) and which points to a replica (for reads) - AWS does not abstract this automatically.
+- You can have up to **15 read replicas** per DB instance (for MySQL, MariaDB, PostgreSQL, SQL Server). Oracle supports up to 5.
+- There is **no data transfer cost** for replication within the same AWS Region. Cross-region replication incurs network charges.
+- Read Replicas can be **promoted to standalone DB instances** - useful as a manual disaster recovery option if the primary fails.
+
+**Eg:** An e-commerce platform experiences a heavy spike in product browsing and search queries during a sale event, but the number of actual purchases (writes) remains relatively low. Instead of over-provisioning the primary DB instance, the team creates 2-3 Read Replicas and routes all `SELECT` queries (product listings, search, order history) to the replicas. The primary instance handles only `INSERT`/`UPDATE`/`DELETE` operations (checkouts, inventory updates). This keeps the primary instance healthy and reduces latency for both readers and writers.
+
+#### RDS Multi-AZ
+- Multi-AZ is designed for **high availability and automatic failover** - not for read scaling.
+- Replication to the standby is **synchronous**, meaning data is written to both the primary and standby simultaneously - zero data loss on failover.
+- The **standby instance is not accessible** for reads or writes during normal operation. It exists solely for failover. (Multi-AZ is NOT a read-scaling solution.)
+- In case of a primary failure (hardware issue, AZ outage, etc.), RDS **automatically fails over** to the standby - typically under 35 seconds - with no manual intervention needed.
+- The **DNS endpoint remains the same** after failover, so the application reconnects automatically without any connection string changes.
+- There is **no network cost** for replication to the standby when both are in the same region.
+- Multi-AZ is available within a **single AWS Region** only - cross-region Multi-AZ is not supported (use cross-region Read Replicas for that).
+
+**Eg:** A fintech company runs a payment processing service where even a few minutes of downtime causes revenue loss and SLA breaches. They deploy their RDS MySQL instance with Multi-AZ enabled. During a routine maintenance window, AWS fails over to the standby seamlessly - the application experiences only a brief blip (under 35 seconds) and reconnects automatically via the same DNS endpoint, with no data loss. No engineer needs to be paged.
+
+#### Combining Both
+- Read Replicas and Multi-AZ can be used together. You can configure the primary DB as Multi-AZ (for high availability) and also attach Read Replicas (for read scalability).
+- You can even configure a Read Replica itself to be Multi-AZ, making it a robust DR target in another region.
+
+### Amazon Aurora
+- Aurora is AWS's own cloud-native relational database engine, compatible with MySQL and PostgreSQL, but re-architected from the ground up for the cloud.
+- Shared distributed storage that auto-grows up to **128 TiB** (in 10 GiB increments) - no need to pre-provision storage.
+- Aurora automatically maintains **6 copies** of your data across **3 Availability Zones** for high durability - storage is self-healing.
+- Supports up to **15 Read Replicas** with minimal replica lag (usually under 100ms).
+- Aurora is typically **5x faster than RDS MySQL** and **3x faster than RDS PostgreSQL**.
+- Aurora exposes two key endpoints to abstract the cluster from the application:
+  - **Writer Endpoint** - Always points to the current primary instance. On failover, it automatically redirects to the newly promoted primary - no connection string change needed in the app.
+  - **Reader Endpoint** - Automatically load-balances read traffic across all available Read Replicas.
+
+#### Features of Aurora
+
+##### 1. Aurora High Availability
+- Aurora automatically replicates data 6 ways across 3 AZs. If a primary instance fails, Aurora promotes one of the Read Replicas to become the new primary automatically - typically within 30 seconds.
+- The Writer Endpoint DNS is updated automatically so the application reconnects to the new primary seamlessly.
+
+##### 2. Aurora Serverless (v2)
+- An on-demand, auto-scaling configuration for Aurora where AWS automatically adjusts compute (CPU + memory) based on actual application load - you don't manage instance sizes.
+- Scales instantly and in fine-grained increments (as small as 0.5 ACUs) with no downtime or connection drops.
+- You pay per second only for the capacity consumed.
+- Supports the full Aurora feature set including Multi-AZ, Global Database, and Read Replicas (unlike the older v1).
+- **Use case:** Unpredictable or spiky workloads - e.g. a SaaS app that is idle most of the day but gets heavy bursts during business hours. With Serverless v2, the cluster scales up during the burst and scales down automatically when traffic drops, avoiding the cost of a permanently over-provisioned instance.
+
+##### 3. Aurora Auto Scaling
+- Automatically adds or removes Read Replicas based on CloudWatch metrics like average CPU utilization or average DB connections across the reader fleet.
+- You define a min and max replica count; Aurora scales within that range in response to actual workload.
+- Newly auto-scaled replicas are assigned the lowest failover priority (tier-15) so manually created replicas are always promoted first during a failure.
+- **Use case:** An e-commerce platform that has steady traffic during weekdays but massive read spikes on weekends. Auto Scaling adds replicas when CPU crosses a threshold (e.g. 60%) and removes them when traffic subsides - no manual intervention needed.
+
+##### 4. Aurora Backtrack
+- Allows you to **rewind** an Aurora DB cluster to a specific point in time **without restoring from a backup and without creating a new DB cluster**.
+- Works by maintaining a FIFO buffer of change records (Log Sequence Numbers). Rewinding typically completes in minutes, compared to hours for a snapshot restore.
+- You configure a **target backtrack window** (e.g. 24 hours) when creating the cluster. The actual window may be shorter depending on workload volume.
+- **Important limitation: Backtrack is only available for Aurora MySQL-Compatible Edition. It is NOT supported for Aurora PostgreSQL.**
+- Must be enabled at cluster creation time - it cannot be enabled after the fact.
+- **Use case:** A developer accidentally runs `DELETE FROM orders` without a `WHERE` clause on a production Aurora MySQL database. Instead of restoring a snapshot (which could take hours and require a new cluster), they use Backtrack to rewind the cluster to 5 minutes before the mistake - with minimal downtime and zero data loss beyond that window.
+
+##### 5. Aurora Global Database
+- Spans **multiple AWS Regions** - one primary region for reads and writes, and up to 5 read-only secondary regions.
+- Replication from primary to secondary regions happens with typical latency of **under 1 second**.
+- If the primary region goes down, a secondary region can be promoted to primary in under 1 minute (RPO ~1s, RTO ~1min).
+- **Use case:** A globally distributed SaaS application with users in the US, Europe, and Asia. Writes happen in `us-east-1` (primary), but users in `eu-west-1` and `ap-southeast-1` read from their local Aurora secondary clusters with low latency. If `us-east-1` has an outage, `eu-west-1` is promoted as the new primary.
+
+##### 6. Aurora Security
+- Encryption at rest using AWS KMS (must be enabled at cluster creation).
+- Encryption in transit using SSL/TLS.
+- Network isolation via Amazon VPC.
+- IAM Database Authentication - allows connecting to Aurora using IAM roles/users instead of a static DB password (supported for MySQL and PostgreSQL compatible editions).
+- Integration with AWS Secrets Manager for automatic credential rotation.
+
+##### 7. Aurora Monitoring
+- Native integration with **Amazon CloudWatch** for metrics like CPU, connections, replica lag, and read/write IOPS.
+- **RDS Performance Insights** - identifies the top SQL queries causing load, helping pinpoint slow queries and bottlenecks.
+- **Enhanced Monitoring** - provides OS-level metrics (memory, disk I/O, processes) at up to 1-second granularity.
+- **Aurora Events and Notifications** - sends SNS notifications for cluster events like failover, backup completion, etc.
+
+##### 8. Aurora Machine Learning
+- Allows you to add ML-based predictions, recommendations, and anomaly detection to your applications using familiar SQL commands, without requiring you to build, train, or deploy separate ML models.
+- Integrates with Amazon SageMaker and Amazon Comprehend to provide ML capabilities directly within your Aurora database.
+- **Use case:** An e-commerce platform wants to add product recommendations to its application. Instead of building a separate recommendation engine, they can use Aurora Machine Learning to train a recommendation model using their existing product and customer data, and then query the model directly from their application using SQL.
+
+---
+ 
 ## S3
 
 ---
